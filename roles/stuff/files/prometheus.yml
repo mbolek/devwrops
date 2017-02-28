@@ -1,0 +1,64 @@
+global:
+  scrape_interval:     15s # By default, scrape targets every 15 seconds.
+  evaluation_interval: 15s # By default, scrape targets every 15 seconds.
+  # scrape_timeout is set to the global default (10s).
+
+  # The labels to add to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+    monitor: 'master'
+
+
+
+# Rule files specifies a list of files from which rules are read.
+rule_files:
+    - /etc/prometheus/rules/basic.rules
+  
+
+
+# A list of scrape configurations.
+scrape_configs:
+
+  - job_name: 'prometheus'
+    scrape_interval: 10s
+    scrape_timeout:  10s
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: "node"
+    file_sd_configs:
+      - files:
+        - '/etc/prometheus/tgroups/*.json'
+        - '/etc/prometheus/tgroups/*.yml'
+        - '/etc/prometheus/tgroups/*.yaml'
+
+  - job_name: 'haproxy'
+    static_configs:
+      - targets: ['localhost:9101']
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['localhost:9121']
+
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['localhost:8081']
+
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [https_2xx]  # Look for a HTTP 200 response.
+    static_configs:
+      - targets:
+        - meetup.com
+
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: (.*?)(:80)?
+        target_label: __param_target
+        replacement: https://${1}
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 127.0.0.1:9115  # Blackbox exporter.
+

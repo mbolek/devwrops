@@ -1,0 +1,10 @@
+---
+# handlers file for ansible-blackbox
+- name: restart blackbox
+  service: name=blackbox-exporter state=restarted enabled=yes
+
+- name: reload blackbox
+  service: name=blackbox-exporter state=reloaded enabled=yes
+
+- name: stop blackbox
+  service: name=blackbox-exporter state=stopped enabled=yes

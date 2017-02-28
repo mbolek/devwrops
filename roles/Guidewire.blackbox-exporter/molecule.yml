@@ -1,0 +1,37 @@
+---
+# directory to look for testinfra tests
+testinfra_dir: tests
+
+# configuration options for the internal call to ansible-playbook
+ansible:
+  playbook: playbook.yml
+
+# configuration options for the internal call to vagrant
+vagrant:
+  # vagrant arguments that are global to all instances
+  raw_config_args:
+    - "ssh.insert_key = false"
+
+  # molecule's --platform option will look for these names
+  platforms:
+    - name: centos6
+      box: centos/6
+
+  providers:
+    - name: virtualbox
+      type: virtualbox
+
+  instances:
+    - name: ansible-blackbox-prometheus-01
+      ansible_groups:
+        - group_1
+      interfaces:
+        - network_name: private_network
+          type: dhcp
+          auto_config: true
+      options:
+        # prevents vagrant-01 from becoming vagrant-01-rhel-7 (platform is appended by default)
+        append_platform_to_hostname: no
+      # vagrant arguments specific to this instance
+      # raw_config_args:
+      #   - "vm.synced_folder '../projects/web', '/web'"

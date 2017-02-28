@@ -1,0 +1,33 @@
+---
+# tasks file for ansible-blackbox
+- block:
+  - name: Copy Blackbox configuration file
+    copy: src="blackbox.yml"
+          dest="{{ blackbox_config_file }}"
+          mode=0644
+
+  - name: Create Blackbox installation directory
+    file: path={{ blackbox_install_dir }}
+          owner={{ blackbox_user }}
+          group={{ blackbox_group }}
+          mode=0755
+          state=directory
+
+  - name: Download and untar Blackbox
+    unarchive:
+      src: "{{ blackbox_url }}"
+      dest: "{{ blackbox_install_dir }}"
+      copy: no
+
+  - name: Setup Blackbox service startup
+    copy: src="etc-default-blackbox"
+          dest="/etc/default/blackbox-exporter"
+          mode=0644
+
+  - name: Setup Blackbox service
+    template: src="blackbox-exporter.sysvinit.{{ ansible_os_family|lower }}.sh.j2"
+              dest="/etc/init.d/blackbox-exporter"
+              mode=0755
+    notify: reload blackbox
+
+  when: ansible_os_family|lower == "redhat" or ansible_os_family|lower == "debian"

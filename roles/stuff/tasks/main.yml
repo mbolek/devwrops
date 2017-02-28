@@ -1,0 +1,72 @@
+---
+# tasks file for .
+- name: Add key for docker-engine repo
+  apt_key: keyserver=hkp://p80.pool.sks-keyservers.net:80 id=58118E89F3A912897C070ADBF76221572C52609D
+
+- name: Add repositories for docker-engine
+  apt_repository: repo="deb https://apt.dockerproject.org/repo ubuntu-xenial main" state=present
+
+- name: Install docker, pip
+  apt: name={{ item }} state=present
+  with_items:
+  - "docker-engine"
+  - "python-pip"
+
+- name: pip install docker-py, docker-compose
+  pip: name={{ item.name }} version={{ item.ver }}
+  with_items:
+  - { name: 'docker-py', ver: '1.10.6'}
+  - { name: 'docker-compose', ver: '1.9.0'}
+
+- name: run cAdvisor container
+  docker_container:
+    name: cadvisor
+    image: "google/cadvisor"
+    ports:
+    - "8081:8080"
+    volumes:
+    - "/:/rootfs:ro"
+    - "/var/run:/var/run:rw"
+    - "/sys:/sys:ro"
+    - "/cgroup:/cgroup:ro"
+    privileged: true
+    restart_policy: always
+
+- name: copy haproxy config
+  copy: src=haproxy.cfg dest=/tmp/haproxy.cfg
+  
+- name: run haproxy in a container
+  docker_container:
+    name: haproxy
+    image: "haproxy:1.6"
+    ports:
+      - "9000:9000"
+    volumes:
+      - /tmp/:/usr/local/etc/haproxy
+
+- name: run redis in docker
+  docker_container:
+    name: redis
+    ports:
+      - "6379:6379"
+    image: redis
+
+- name: update facts if docker0 is not defined
+  action: setup
+  when: ansible_docker0 is not defined
+
+- name: run haproxy_exporter in docker
+  docker_container:
+    name: haproxy_exporter
+    image: "quay.io/prometheus/haproxy-exporter"
+    ports:
+      - "9101:9101"
+    command: -haproxy.scrape-uri="http://admin:admin@{{ansible_docker0.ipv4.address}}:9000/stats;csv"
+
+- name: run redis_exporter in docker
+  docker_container:
+    name: redis_exporter
+    image: oliver006/redis_exporter
+    ports:
+      - "9121:9121"
+    command: --redis.addr={{ansible_docker0.ipv4.address}}:6379

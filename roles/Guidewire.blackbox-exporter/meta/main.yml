@@ -1,0 +1,16 @@
+galaxy_info:
+  author: Henrique Gontijo
+  description: Install Blackbox exporter. https://github.com/prometheus/blackbox_exporter
+  company: Guidewire Software
+
+  license: MIT
+  min_ansible_version: 2.0
+
+  platforms:
+    - name: RedHat
+    - name: CentOS
+    - name: Amazon
+
+  galaxy_tags: [ metrics, monitoring ]
+
+dependencies: []

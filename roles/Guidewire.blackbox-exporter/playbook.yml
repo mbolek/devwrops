@@ -1,0 +1,8 @@
+---
+- hosts: all
+  pre_tasks:
+    - name: Install the libselinux-python package (only required for testing)
+      yum: name=libselinux-python state=installed
+
+  roles:
+    - role: ansible-blackbox-exporter
